@@ -69,6 +69,26 @@ router.post('/login', async (req, res) => {
     }
 });
 
+// Fetch secret key for YouTuber
+router.get('/fetch-secret-key',authMiddleware,async (req,res)=>{
+    try{
+        const userId = req.user.userId;
+        const user = await User.findById(userId);
+        if(!user){
+            return res.status(404).json({ message: 'User not found' });
+        }
+        if (user.role !== 'YouTuber') {
+            return res.status(403).json({ message: 'User is not a YouTuber' });
+        }
+        res.json({ secretKey: user.secretKey });
+    }
+    catch (err) {
+        console.error('Error fetching secret key:', err);
+        res.status(500).json({ message: 'Failed to fetch secret key' });
+    }
+})
+
+
 // Secret key generation route (for YouTubers)
 router.post('/generate-secret', authMiddleware, async (req, res) => {
     try {

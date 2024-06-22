@@ -17,10 +17,12 @@ const App = () => {
             } catch (error) {
                 console.error('Error decoding token:', error);
                 localStorage.removeItem('token');
+                return '';
             }
         }
         return '';
     });
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
         if (token) {
@@ -37,21 +39,41 @@ const App = () => {
             setUserRole('');
             localStorage.removeItem('token');
         }
+        setIsLoading(false);
     }, [token]);
+
+    const handleLogin = (newToken) => {
+        setToken(newToken);
+        localStorage.setItem('token', newToken);
+        const decodedToken = jwtDecode(newToken);
+        setUserRole(decodedToken.role);
+    };
+
+    if (isLoading) {
+        return <div>Loading...</div>; // Or a loading spinner
+    }
 
     return (
         <Router>
             <div>
                 <Routes>
                     <Route path="/" element={<Register />} />
-                    <Route path="/login" element={<Login setToken={setToken} setUserRole={setUserRole} />} />
+                    <Route path="/login" element={<Login setToken={handleLogin} />} />
                     <Route
                         path="/youtuber-home"
-                        element={token && userRole === 'YouTuber' ? <YouTuberHome /> : <Navigate to="/login" />}
+                        element={
+                            token && userRole === 'YouTuber' ?
+                                <YouTuberHome token={token} setToken={setToken} /> :
+                                <Navigate to="/login" />
+                        }
                     />
                     <Route
                         path="/editor-home"
-                        element={token && userRole === 'Editor' ? <EditorHome /> : <Navigate to="/login" />}
+                        element={
+                            token && userRole === 'Editor' ?
+                                <EditorHome token={token} setToken={setToken} /> :
+                                <Navigate to="/login" />
+                        }
                     />
                 </Routes>
             </div>

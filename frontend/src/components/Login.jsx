@@ -1,15 +1,16 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import {jwtDecode} from 'jwt-decode';
+import { jwtDecode } from 'jwt-decode';
 
-const Login = ({ setToken, setUserRole }) => {
+const Login = ({ setToken }) => {
     const [formData, setFormData] = useState({
         email: '',
         password: ''
     });
-
     const [error, setError] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
     const navigate = useNavigate();
 
     const onChange = e => {
@@ -19,20 +20,17 @@ const Login = ({ setToken, setUserRole }) => {
 
     const onSubmit = async e => {
         e.preventDefault();
+        setIsLoading(true);
         try {
             const res = await axios.post('http://localhost:8000/api/auth/login', formData);
             const token = res.data.token;
-            localStorage.setItem('token', token); // Save token to localStorage
-            setToken(token);
+            setToken(token); // This will update both token and userRole in App.js
             const decodedToken = jwtDecode(token);
-            setUserRole(decodedToken.role);
-            if (decodedToken.role === 'YouTuber') {
-                navigate('/youtuber-home');
-            } else {
-                navigate('/editor-home');
-            }
+            navigate(decodedToken.role === 'YouTuber' ? '/youtuber-home' : '/editor-home');
         } catch (err) {
-            setError(err.response.data.message);
+            setError(err.response?.data?.message || 'An error occurred. Please try again.');
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -51,20 +49,30 @@ const Login = ({ setToken, setUserRole }) => {
                         className="w-full p-2 border border-gray-300 rounded mb-4"
                         required
                     />
-                    <input
-                        type="password"
-                        name="password"
-                        value={formData.password}
-                        onChange={onChange}
-                        placeholder="Password"
-                        className="w-full p-2 border border-gray-300 rounded mb-4"
-                        required
-                    />
+                    <div className="relative">
+                        <input
+                            type={showPassword ? "text" : "password"}
+                            name="password"
+                            value={formData.password}
+                            onChange={onChange}
+                            placeholder="Password"
+                            className="w-full p-2 border border-gray-300 rounded mb-4"
+                            required
+                        />
+                        <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-2 top-2 text-gray-600"
+                        >
+                            {showPassword ? "Hide" : "Show"}
+                        </button>
+                    </div>
                     <button
                         type="submit"
-                        className="w-full bg-blue-500 text-white p-2 rounded transition duration-300 hover:bg-blue-600"
+                        className={`w-full bg-blue-500 text-white p-2 rounded transition duration-300 hover:bg-blue-600 ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        disabled={isLoading}
                     >
-                        Login
+                        {isLoading ? 'Logging in...' : 'Login'}
                     </button>
                     <p className="mt-4 text-center">
                         Don't have an account? <a href="/register" className="text-blue-500 transition duration-300 hover:text-blue-600">Register here</a>
