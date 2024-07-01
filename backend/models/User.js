@@ -6,6 +6,7 @@ const UserSchema = new mongoose.Schema({
     password: { type: String, required: true },
     role: { type: String, enum: ['YouTuber', 'Editor'], required: true },
     secretKey: { type: String, unique: true, sparse: true }, // Sparse index allows null values
+    associatedUser: { type: String, default: null }
 });
 
 module.exports = mongoose.model('User', UserSchema);

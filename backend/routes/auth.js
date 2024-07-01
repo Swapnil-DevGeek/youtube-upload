@@ -125,32 +125,55 @@ router.post('/generate-secret', authMiddleware, async (req, res) => {
 router.post('/validate-secret', authMiddleware, async (req, res) => {
     try {
         const { email, secretKey } = req.body;
+        const editor = req.user;
 
-        // Find user by email
-        const user = await User.findOne({ email });
-        if (!user) {
-            return res.status(404).json({ message: 'User not found' });
+        // Find YouTuber by secret key
+        const youtuber = await User.findOne({
+            email: email,
+            secretKey :secretKey,
+            role: 'YouTuber'
+        });
+
+        if (!youtuber) {
+            return res.status(404).json({ message: 'YouTuber not found or invalid secret key' });
         }
 
-        // Check if user is a YouTuber
-        if (user.role !== 'YouTuber') {
-            return res.status(403).json({ message: 'User is not a YouTuber' });
+        // Update the editor's associatedUser field
+        if(!editor.associatedUser){
+            const updatedEditor = await User.findOneAndUpdate(
+                { email: editor.email },
+                { associatedUser: youtuber.email },
+                { new: true }
+            )
+            if (!updatedEditor) {
+                return res.status(404).json({ message: 'Editor not found' });
+            }
         }
 
-        // Check if secret key matches
-        if (user.secretKey !== secretKey) {
-            return res.status(401).json({ message: 'Invalid secret key' });
+        if(!youtuber.associatedUser){
+            // Update the YouTuber's associatedUser field
+            const updatedYouTuber = await User.findOneAndUpdate(
+                { email: youtuber.email },
+                { associatedUser: editor.email },
+                { new: true }
+            );
+
+            if (!updatedYouTuber) {
+                return res.status(500).json({ message: 'Failed to update YouTuber' });
+            }
         }
 
         // Return name and email of the YouTuber
-        res.json({ username: user.username, email: user.email });
+        return res.json({
+            message: 'Association successful',
+            youtuber: { username: youtuber.username, email: youtuber.email }
+        });
 
     } catch (err) {
         console.error('Error validating secret key:', err);
         res.status(500).json({ message: 'Failed to validate secret key' });
     }
 });
-
 
 
 
