@@ -5,6 +5,8 @@ import Login from './components/Login';
 import YouTuberHome from './components/YouTuber/YouTuberHome';
 import EditorHome from './components/Editor/EditorHome';
 import { jwtDecode } from 'jwt-decode';
+import GoogleCallback from "./components/GoogleCallback.jsx";
+import UploadResult from "./components/UploadResult.jsx";
 
 const App = () => {
     const [token, setToken] = useState(() => localStorage.getItem('token') || null);
@@ -75,6 +77,9 @@ const App = () => {
                                 <Navigate to="/login" />
                         }
                     />
+
+                    <Route path="/auth/google/callback" element={<GoogleCallback />} />
+                    <Route path="/upload-result" element={<UploadResult/>} />
                 </Routes>
             </div>
         </Router>

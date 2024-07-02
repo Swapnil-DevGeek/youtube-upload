@@ -23,6 +23,18 @@ const YouTuberHome = ({ token, setToken }) => {
         }
     }, [token]);
 
+    useEffect(() => {
+        const handleMessage = (event) => {
+            if (event.data.type === 'GOOGLE_AUTH_SUCCESS') {
+                // Trigger the publishing process here
+                handlePublishToYouTube(event.data.videoId);
+            }
+        };
+
+        window.addEventListener('message', handleMessage);
+        return () => window.removeEventListener('message', handleMessage);
+    }, []);
+
     const fetchSecretKey = async () => {
         try {
             const response = await axios.get('http://localhost:8000/api/auth/fetch-secret-key', {
@@ -116,6 +128,22 @@ const YouTuberHome = ({ token, setToken }) => {
             alert('Failed to upload video. Please try again.');
         }
     }
+
+    const handlePublishToYouTube = async (videoId) => {
+        try {
+            const decodedToken = jwtDecode(token);
+            const userId = decodedToken.userId;
+            const response = await axios.get('http://localhost:8000/auth/google', {
+                params : {userId,videoId},
+                headers: { Authorization: token }
+            });
+            window.open(response.data.authUrl, '_blank', 'width=500,height=600');
+        } catch (error) {
+            console.error('Error initiating YouTube publishing:', error);
+            alert('Failed to initiate YouTube publishing. Please try again.');
+        }
+    };
+
 
     if (!token) {
         return <Navigate to="/login" />;
@@ -212,6 +240,12 @@ const YouTuberHome = ({ token, setToken }) => {
                                     <p className="text-sm text-gray-500">
                                         Uploaded: {new Date(video.uploadedAt).toLocaleDateString()}
                                     </p>
+                                    <button
+                                        onClick={() => handlePublishToYouTube(video._id)}
+                                        className="mt-2 bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+                                    >
+                                        Publish to YouTube
+                                    </button>
                                 </div>
                             ))}
                         </div>
